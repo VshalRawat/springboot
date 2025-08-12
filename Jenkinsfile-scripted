@@ -1,1 +1,32 @@
 
+node {
+    // Define tools
+    def mvnHome = tool name: 'Maven', type: 'maven'
+
+    // Environment variables
+    withCredentials([string(credentialsId: 'Sonarqube_token', variable: 'SONARQUBE_TOKEN')]) {
+        env.SONARQUBE_URL = 'https://d6312cd2eccd.ngrok-free.app/projects'
+
+        stage('Checkout') {
+            git branch: 'main', url: 'https://github.com/VshalRawat/springboot.git'
+            sh 'ls -la'
+        }
+
+        stage('Build') {
+            sh "${mvnHome}/bin/mvn clean install"
+        }
+
+        stage('Package') {
+            sh "${mvnHome}/bin/mvn package"
+        }
+
+        stage('SonarQube Analysis') {
+            sh """
+                ${mvnHome}/bin/mvn sonar:sonar \
+                    -Dsonar.projectKey=vishal-springboot-demo \
+                    -Dsonar.host.url=https://d6312cd2eccd.ngrok-free.app \
+                    -Dsonar.login=${SONARQUBE_TOKEN}
+            """
+        }
+    }
+}
